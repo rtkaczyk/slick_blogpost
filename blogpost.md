@@ -83,7 +83,7 @@ val salesQuery = {
 }
 
 def fetchSales(minTotal: BigDecimal): List[SaleRecord] = db.withSession { implicit session =>
-  // fetch the results as a list of Scala types and transform a model case class
+  // fetch the results as a list of Scala types and transform to a model case class
   salesQuery(minTotal).list.map(SaleRecord.tupled)
 }
 ```
@@ -105,7 +105,7 @@ Pure evil. Counting the selects and figuring out the nesting is left as an exerc
 
 
 ## How fast can this thing go?
-Given that the generated code looks like some kind of SQL assembly, maybe it's faster than we think? To verify I wrote a very simple performance test, you can find it (and all the accompanying code, btw.) here *[link to github]*. Have a look if you're interested in the details of the test data or its volume. All that really matters is that test runs the query defined above and its Plain SQL equivalent 100 times on exactly the same data and it prints the respective times taken:
+Given that the generated code looks like some kind of SQL assembly, maybe it's faster than we think? To verify, I wrote a very simple performance test, you can find it (and all the accompanying code, btw.) here *[link to github]*. Have a look if you're interested in the details of the test data or its volume. All that really matters is that test runs the query defined above and its Plain SQL equivalent 100 times on exactly the same data and it prints the respective times taken:
 
 ```
 > runMain io.scalac.slick.JoinPerfTest
@@ -115,7 +115,7 @@ Plain SQL:        0.10 s
 [success] Total time: 89 s, completed Dec 21, 2014 10:06:29 AM
 ```
 
-*Link to issue*
+This issue is well known to Slick developers, you can find more info about it here: https://github.com/slick/slick/issues/623
 
 ## Who's in?
 
@@ -144,7 +144,7 @@ def fetchProductNamesByIds(ids: List[Int]): List[String] = db.withSession { impl
 
 A query to be compiled has to be a function of arguments of type `Column`, but unlike for scalar types, there is no conversion from a collection type to a `Column`. This issue is described in more detail here: https://github.com/slick/slick/issues/718
 
-This simple query takes about 20 ms on average to compile, but that can still be a lot for a high troughput application, and the `IN` operator can be a part of more elaborate query like the one with the joins (as was the case in our project). The only solution then is to go with Plain SQL.
+This simple query took about 20 ms on average to compile, but that can still be a lot for a high troughput application, and the `IN` operator can be a part of a more elaborate query like the one with the joins (as was the case in our project). The only solution then is to go with Plain SQL.
 
 
 ## If you can count - count on yourself
@@ -167,28 +167,33 @@ This issue is raised here: https://github.com/slick/slick/issues/489
 
 
 
-## Some like it hot. I prefer classical SQL
+## Some like it hot. I prefer classic SQL
 
 The issues presented here led us to give up on Lifted Embedding altogether and go with Plain SQL. I was happy with this outcome. Any paradigm changing abstractions over relational databases seem like a bad idea to me, even if they try to mimic something as familiar and enjoyable as Scala collection API. 
 
-There are multiple reason to prefer the good old SQL:
+There are multiple reasons to prefer the good old SQL:
 
 * Maturity - it has been around for 40 years now as the one proper method of interacting with relational databases
 * Practically everyone knows it to some extent, plenty of resources on the Internet - quite the opposite of Slick or any other new library
 * The best choice for performance, free from limitations imposed by abstractions.
 
-*finish, maintenace?*
-
-*Plain SQL examples*
-
-*mention scalikejdbc*
+Fortunately Slick provides convenient methods of writing SQL queries. Parameteres to queries can be provided in 3 different ways including string interpolation and it's straight-forward to convert the results to tuples or case classes. Details here: http://slick.typesafe.com/doc/2.1.0/sql.html
 
 
 
-## How I learned to stop worrying.
-*angie's experience, no joins, key-value, what's the point?*
+## Bring it to the table
 
-## Final remarks
-*something positive?*
+It certainly wouldn't be fair only to focus on the drawbacks of Slick as the DSL it introduces (which is a rather new concept often refferred to as Functional Relation Mapping) is certainly appealing to the fans of functional and statically typed programming. But tastes aside, probably the most important consequence is the short learning curve, and thus easy adoption into your software project as the methods of operating on tables look familiar even to beginners in Scala. 
 
-*repeat github link*
+Another thing to look out for is the upcoming release of Slick 3.0 (http://slick.typesafe.com/news/2014/12/19/slick-3.0.0-M1-released.html) which promises to take relational databases into the reactive world, which is another novelty amongst competing frameworks. Surely Slick developers know how to keep with the current trends.
+
+So if I haven't scared you enough with the issues presented here, at the very least you might consider Slick's DSL as a fast and convenient prototyping tool, gradually falling back to Plain SQL mode once the bottlenecks in your application are recognized. If however, you know beforehand that you will need to squeeze the best out of a RDBMS you might be better of with frameworks like Anorm (https://www.playframework.com/documentation/2.3.x/ScalaAnorm) or ScalikeJDBC (http://scalikejdbc.org/) which aim to operate on databases in the fashion they were designed to (doesn't that sound like a good idea?)
+
+Again, the code accompanying this blog post can be found here: *link*
+
+Happy querying!
+
+
+
+
+
